@@ -5,7 +5,7 @@ import com.udacity.catpoint.data.AlarmStatus;
 import com.udacity.catpoint.data.ArmingStatus;
 import com.udacity.catpoint.data.SecurityRepository;
 import com.udacity.catpoint.data.Sensor;
-import com.udacity.catpoint.service.FakeImageService;
+import com.udacity.catpoint.service.ImageService;
 
 import java.awt.image.BufferedImage;
 import java.util.HashSet;
@@ -20,11 +20,11 @@ import java.util.Set;
  */
 public class SecurityService {
 
-    private FakeImageService imageService;
+    private ImageService imageService;
     private SecurityRepository securityRepository;
     private Set<StatusListener> statusListeners = new HashSet<>();
 
-    public SecurityService(SecurityRepository securityRepository, FakeImageService imageService) {
+    public SecurityService(SecurityRepository securityRepository, ImageService imageService) {
         this.securityRepository = securityRepository;
         this.imageService = imageService;
     }
@@ -38,7 +38,13 @@ public class SecurityService {
         if(armingStatus == ArmingStatus.DISARMED) {
             setAlarmStatus(AlarmStatus.NO_ALARM);
         }
+        else {
+            // Discovered due to Req 10.
+            getSensors().forEach(sensor -> changeSensorActivationStatus(sensor, false));
+        }
         securityRepository.setArmingStatus(armingStatus);
+        // The Listener pattern shall be notified about changes
+        statusListeners.forEach(StatusListener::sensorStatusChanged);
     }
 
     /**
@@ -106,11 +112,16 @@ public class SecurityService {
      * @param active
      */
     public void changeSensorActivationStatus(Sensor sensor, Boolean active) {
-        if(!sensor.getActive() && active) {
-            handleSensorActivated();
-        } else if (sensor.getActive() && !active) {
-            handleSensorDeactivated();
+        Boolean isSensorActivated = sensor.getActive();
+        // Req 4 - Make no changes if the Alarm is on
+        if (securityRepository.getAlarmStatus() != AlarmStatus.ALARM) {
+            if (active) {
+                handleSensorActivated();
+            } else if (isSensorActivated || securityRepository.getAlarmStatus() == AlarmStatus.PENDING_ALARM) {
+                handleSensorDeactivated();
+            }
         }
+
         sensor.setActive(active);
         securityRepository.updateSensor(sensor);
     }
