@@ -1,6 +1,5 @@
 package com.udacity.catpoint.data;
 
-
 import com.google.common.collect.ComparisonChain;
 
 import java.util.Objects;
