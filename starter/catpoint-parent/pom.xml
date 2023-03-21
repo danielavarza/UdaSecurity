@@ -19,8 +19,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>19</maven.compiler.source>
-    <maven.compiler.target>19</maven.compiler.target>
+    <maven.compiler.source>14</maven.compiler.source>
+    <maven.compiler.target>14</maven.compiler.target>
   </properties>
 
   <build>
@@ -43,6 +43,11 @@
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>3.0.0</version>
+          <configuration>
+            <argLine>
+             --add-opens SecurityModule/com.udacity.catpoint.security=ALL-UNNAMED
+            </argLine>
+          </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
@@ -68,4 +73,14 @@
       </plugins>
     </pluginManagement>
   </build>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>4.7.2.1</version>
+      </plugin>
+    </plugins>
+  </reporting>
 </project>
