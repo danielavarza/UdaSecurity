@@ -4,5 +4,7 @@ module AppModule {
     requires java.desktop;
     requires com.miglayout.swing;
     requires java.prefs;
+    requires com.google.gson;
+    requires com.google.common;
 
 }
