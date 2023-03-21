@@ -46,7 +46,7 @@
       <version>2.0.7</version>
     </dependency>
 
-    <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/protocol-core -->
+    <!-- https://mvnrepository.com/artifact/software.amazon.awssdk/auth -->
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>auth</artifactId>
