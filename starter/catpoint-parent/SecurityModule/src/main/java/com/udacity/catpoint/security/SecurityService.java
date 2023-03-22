@@ -10,6 +10,7 @@ import com.udacity.catpoint.service.ImageService;
 import java.awt.image.BufferedImage;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * Service that receives information about changes to the security system. Responsible for
@@ -23,10 +24,12 @@ public class SecurityService {
     private ImageService imageService;
     private SecurityRepository securityRepository;
     private Set<StatusListener> statusListeners = new HashSet<>();
+    private Boolean isCatDetected;
 
     public SecurityService(SecurityRepository securityRepository, ImageService imageService) {
         this.securityRepository = securityRepository;
         this.imageService = imageService;
+        this.isCatDetected = false;
     }
 
     /**
@@ -35,15 +38,23 @@ public class SecurityService {
      * @param armingStatus
      */
     public void setArmingStatus(ArmingStatus armingStatus) {
+        // Fixes for Req 7:
+        if (isCatDetected && armingStatus == ArmingStatus.ARMED_HOME) {
+            setAlarmStatus(AlarmStatus.ALARM);
+        }
+
         if(armingStatus == ArmingStatus.DISARMED) {
             setAlarmStatus(AlarmStatus.NO_ALARM);
         }
         else {
-            // Discovered due to Req 10.
-            getSensors().forEach(sensor -> changeSensorActivationStatus(sensor, false));
+            // Due to Exception in thread "AWT-EventQueue-0" java.util.ConcurrentModificationException
+            // Need to use a thread-safe collection
+            // Deactivate sensors - Req 10
+            ConcurrentSkipListSet<Sensor> sensors = new ConcurrentSkipListSet<>(getSensors());
+            sensors.forEach(sensor -> changeSensorActivationStatus(sensor, false));
         }
         securityRepository.setArmingStatus(armingStatus);
-        // The Listener pattern shall be notified about changes
+        // The Observer shall be notified about changes
         statusListeners.forEach(StatusListener::sensorStatusChanged);
     }
 
@@ -53,9 +64,14 @@ public class SecurityService {
      * @param cat True if a cat is detected, otherwise false.
      */
     private void catDetected(Boolean cat) {
-        if(cat && getArmingStatus() == ArmingStatus.ARMED_HOME) {
+        // Make the detection visible to the whole class
+        isCatDetected = cat;
+        // Checking if all sensors are de-activated
+        Boolean allSensorsDeactivated = getSensors().stream().allMatch(sensor -> sensor.getActive() == false);
+
+        if(isCatDetected && getArmingStatus() == ArmingStatus.ARMED_HOME) {
             setAlarmStatus(AlarmStatus.ALARM);
-        } else {
+        } else if (!isCatDetected && allSensorsDeactivated) {
             setAlarmStatus(AlarmStatus.NO_ALARM);
         }
 
